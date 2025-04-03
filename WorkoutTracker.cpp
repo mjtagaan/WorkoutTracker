@@ -59,7 +59,7 @@ struct mainmenu {
                 std::cout << "save workout \n";
                 repUi();
                 break;
-            case 6:   
+            case 6: 
                 std::cout << "Thank you for using the workout tracker!";
                 exit(0);
                 break;
