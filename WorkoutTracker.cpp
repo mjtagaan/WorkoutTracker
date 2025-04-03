@@ -1,9 +1,10 @@
-#include <iostream> // For the basic input and output functions
-#include <vector> // For handling dynamic inputs	
-#include <limits> // Limits library to add min/max value	
-#include <cctype> // Include cctype library for character handling
-#include <cmath> // For future calculations
-#include <iomanip> // Include iomanip library for formatting output
+#include <iostream> // For the basic input and output functions.
+#include <vector> // For handling dynamic inputs.	
+#include <limits> // Limits library to add min/max value.
+#include <cctype> // Include cctype library for character handling.
+#include <cmath> // For future calculations.
+#include <iomanip> // Include iomanip library for formatting output.
+#include <cstdlib> // For the exit() function.
 
  /* Struct to represent the main menu and its associated functions. */
 
@@ -60,6 +61,7 @@ struct mainmenu {
                 break;
             case 6:   
                 std::cout << "Thank you for using the workout tracker!";
+                exit(0);
                 break;
             default:   
                 std::cout << "Invalid choice! Please choose between the numbers of [1-6].\n";
@@ -106,13 +108,16 @@ struct mainmenu {
         int mmex;
         std::cout << "Enter your choice: ";
         std::cin >> mmex;
+
         if (mmex == 1) {
             system("cls");
             ui();
         } else if (mmex == 2) {
             std::cout << "\nThank you for using the program!";
+            exit(0);
         } else if (mmex != 1 && mmex != 2) {
             std::cout << "\nInvalid Input!";
+            repUi(); // Call the function again to get a valid input
         }   
     };
 
