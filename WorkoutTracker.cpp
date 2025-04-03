@@ -12,26 +12,6 @@ struct mainmenu {
     /* Everything that happens within the main menu/display
        Function to serve as the back door to get back to the main menu. */
 
-    void repUi () { 
-
-        // This function serves as the back door to get back to the main menu.
-
-        std::cout << "\nEnter [1] to return to the main menu. \n";
-        std::cout << "Enter [2] to exit. \n\n";
-            
-        int mmex;
-        std::cout << "Enter your choice: ";
-        std::cin >> mmex;
-        if (mmex == 1) {
-            system("cls");
-            ui();
-        } else if (mmex == 2) {
-            std::cout << "\nThank you for using the program!";
-        } else if (mmex != 1 && mmex != 2) {
-            std::cout << "\nInvalid Input!";
-        }   
-    };
-
     /* Function to serve as the layout/default main menu when the program is launched. */
 
     void ui() { 
@@ -108,7 +88,6 @@ struct mainmenu {
     std::string workoutDate;
 
     // Function to handle yes/no input from the user
-	 
     bool yesorno() {
         char choice;
         std::cout << "\nDo you want to continue? (y/n): ";
@@ -117,6 +96,25 @@ struct mainmenu {
         std::cin.ignore(); // Clear newline character from input buffer
         return (tolower(choice) == 'y'); // Return true if 'y' or 'Y', false otherwise
     }
+
+    // This function serves as the back door to get back to the main menu.
+    void repUi () { 
+
+        std::cout << "\nEnter [1] to return to the main menu. \n";
+        std::cout << "Enter [2] to exit. \n\n";
+            
+        int mmex;
+        std::cout << "Enter your choice: ";
+        std::cin >> mmex;
+        if (mmex == 1) {
+            system("cls");
+            ui();
+        } else if (mmex == 2) {
+            std::cout << "\nThank you for using the program!";
+        } else if (mmex != 1 && mmex != 2) {
+            std::cout << "\nInvalid Input!";
+        }   
+    };
 
     /* Function to add a new exercise to the exercises vector.
        Prompts the user for title, date, name, sets, repetitions, and weights. */
