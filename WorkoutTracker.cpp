@@ -178,65 +178,194 @@ struct mainmenu {
     void workout() {
         try {
             if (workoutTitle.empty() && workoutDate.empty()) {
-                do {
+                // Get workout title with validation
+                while (true) {
                     std::cout << "Enter workout title: ";
                     std::getline(std::cin, workoutTitle);
+                    
                     if (workoutTitle.empty()) {
-                        throw std::invalid_argument("\nWorkout title cannot be empty");
+                        system("cls");
+                        std::cout << "Error: Workout title cannot be empty.\n\n";
+                        continue;
                     }
-                } while (workoutTitle.empty());
+                    break;
+                }
 
-                do {
+                // Get workout date with validation
+                while (true) {
                     std::cout << "Enter workout date (YYYY-MM-DD): ";
                     std::getline(std::cin, workoutDate);
                     if (!isValidDate(workoutDate)) {
-                        std::cout << "\nInvalid date format. Use YYYY-MM-DD\n";
+                        system("cls");
+                        std::cout << "Invalid date format. Use YYYY-MM-DD\n\n";
                         workoutDate.clear();
+                        continue;
                     }
                     std::cout << "\n";
-                } while (!isValidDate(workoutDate));
+                    break;
+                }
             } else {
                 std::cout << "\nWorkout Name: " << workoutTitle << std::endl;
                 std::cout << "Workout Date: " << workoutDate << std::endl;
                 std::cout << "\n";
             }
         } catch (const std::exception& e) {
-            std::cout << "Error in workout setup: " << e.what() << std::endl;
+            system("cls");
+            std::cout << "Error in workout setup: " << e.what() << std::endl << std::endl;
             workoutTitle.clear();
             workoutDate.clear();
+            workout(); // Retry on error
         }
     }
 
     void addExercise() {
-    	
-        Exercise newExercise;
-       
-        std::cout << "Enter exercise name: ";
-        std::getline(std::cin, newExercise.name);
-        std::cout << "Enter number of sets: ";
-        std::cin >> newExercise.sets;
-        std::cin.ignore(); // Ignore newline character left in the buffer
+        try {
+            Exercise newExercise;
+                
+            // Get exercise name with validation
+            do {
+                std::cout << "Enter exercise name: ";
+                std::getline(std::cin, newExercise.name);
+                if (newExercise.name.empty()) {
+                    std::cout << "Exercise name cannot be empty. Please try again.\n";
+                }
+            } while (newExercise.name.empty());
 
-        newExercise.reps.resize(newExercise.sets); // Resize reps vector
-        newExercise.weights.resize(newExercise.sets); // Resize weights vector
+            // Show current exercises if any exist
+            if (!exercises.empty()) {
+                std::cout << "\nCurrent exercises in your workout:\n";
+                for (size_t i = 0; i < exercises.size(); ++i) {
+                    std::cout << i + 1 << ". " << exercises[i].name << std::endl;
+                }
+                std::cout << "\n";
+            }
 
-        for (int i = 0; i < newExercise.sets; ++i) {
-            std::cout << "Enter reps for set " << (i + 1) << ": ";
-            std::cin >> newExercise.reps[i];
-            std::cout << "Enter weight for set " << (i + 1) << " (in kg): ";
-            std::cin >> newExercise.weights[i];
-        }
+            // Get number of sets with validation for positive integers
+            while (true) {
+                try {
+                    std::cout << "Enter number of sets: ";
+                    std::string input;
+                    std::getline(std::cin, input);
+                    
+                    if (input.empty()) {
+                        throw std::invalid_argument("Empty input");
+                    }
+                    
+                    int sets;
+                    std::istringstream iss(input);
+                    if (!(iss >> sets) || !iss.eof()) {
+                        throw std::invalid_argument("Invalid number format");
+                    }
+                    
+                    if (sets <= 0) {
+                        throw std::out_of_range("Sets must be greater than 0");
+                    }
+                    
+                    newExercise.sets = sets;
+                    break;
+                } catch (const std::exception& e) {
+                    std::cout << "Error: " << e.what() << ". Please try again.\n";
+                }
+            }
 
-        exercises.push_back(newExercise); // Add new exercise to the vector
-        std::cout << "\nExercise added successfully!\n";
+            newExercise.reps.resize(newExercise.sets);
+            newExercise.weights.resize(newExercise.sets);
 
-        // Use the yes or no function to ask if the user wants to add another exercise
-        
-        if (yesorno()) {
-            addExercise();
-        } else {
-        	system("cls");
-            ui(); // Return to main menu	
+            // Get reps and weights for each set
+            for (int i = 0; i < newExercise.sets; ++i) {
+                std::cout << "\nSet " << (i + 1) << ":\n";
+                
+                // Get reps with validation for positive integers
+                while (true) {
+                    try {
+                        std::cout << "Enter reps: ";
+                        std::string input;
+                        std::getline(std::cin, input);
+                        
+                        if (input.empty()) {
+                            throw std::invalid_argument("Empty input");
+                        }
+                        
+                        int reps;
+                        std::istringstream iss(input);
+                        if (!(iss >> reps) || !iss.eof()) {
+                            throw std::invalid_argument("Invalid number format");
+                        }
+                        
+                        if (reps <= 0) {
+                            throw std::out_of_range("Reps must be greater than 0");
+                        }
+                        
+                        newExercise.reps[i] = reps;
+                        break;
+                    } catch (const std::exception& e) {
+                        std::cout << "Error: " << e.what() << ". Please try again.\n";
+                    }
+                }
+                
+                // Get weights with validation for non-negative numbers
+                while (true) {
+                    try {
+                        std::cout << "Enter weight (in kg): ";
+                        std::string input;
+                        std::getline(std::cin, input);
+                        
+                        if (input.empty()) {
+                            throw std::invalid_argument("Empty input");
+                        }
+                        
+                        float weight;
+                        std::istringstream iss(input);
+                        if (!(iss >> weight) || !iss.eof()) {
+                            throw std::invalid_argument("Invalid number format");
+                        }
+                        
+                        if (weight < 0) {
+                            throw std::out_of_range("Weight cannot be negative");
+                        }
+                        
+                        newExercise.weights[i] = weight;
+                        break;
+                    } catch (const std::exception& e) {
+                        std::cout << "Error: " << e.what() << ". Please try again.\n";
+                    }
+                }
+            }
+
+            exercises.push_back(newExercise);
+            std::cout << "\nExercise added successfully!\n";
+
+            // Show exercise summary
+            std::cout << "\nExercise Summary:\n\n";
+            std::cout << "Name: " << newExercise.name << "\n";
+            for (int i = 0; i < newExercise.sets; ++i) {
+                std::cout << "Set " << (i + 1) << ": "
+                         << newExercise.reps[i] << " reps @ "
+                         << newExercise.weights[i] << " kg\n";
+            }
+
+            if (yesorno()) {
+                system("cls");
+                // Display workout info again after clearing screen
+                std::cout << "Workout Name: " << workoutTitle << "\n";
+                std::cout << "Workout Date: " << workoutDate << "\n\n";
+                addExercise();
+            } else {
+                system("cls");
+                ui();
+            }
+        } catch (const std::exception& e) {
+            std::cout << "Error adding exercise: " << e.what() << "\n";
+            if (yesorno()) {
+                system("cls");
+                // Display workout info again after error
+                std::cout << "Workout Name: " << workoutTitle << "\n";
+                std::cout << "Workout Date: " << workoutDate << "\n\n";
+                addExercise();
+            } else {
+                system("cls");
+                ui();
+            }
         }
     }
 
@@ -425,9 +554,8 @@ struct mainmenu {
             outFile << std::left << std::setw(25) << "Exercise Name";
             outFile << std::setw(12) << "Set";
             outFile << std::setw(14) << "Weight";
-            outFile << std::setw(12) << "Reps\n";
-
-            outFile << "=======================================================\n";
+            outFile << std::setw(12) << "Reps";
+            outFile << "\n=======================================================\n";
 
             // Write each exercise and its details
             for (const auto& exercise : exercises) {
