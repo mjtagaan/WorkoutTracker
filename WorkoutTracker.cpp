@@ -7,6 +7,7 @@
 #include <iomanip> // Include iomanip library for formatting output.
 #include <cstdlib> // For the exit() function.
 #include <algorithm> // For std::replace
+#include <sstream> // For string stream operations
 
  /* Struct to represent the main menu and its associated functions. */
 
@@ -91,6 +92,54 @@ struct mainmenu {
     std::string workoutTitle;
     std::string workoutDate;
 
+    // Utility function for safe numeric input
+    template<typename T>
+    T getNumericInput(const std::string& prompt, T min_val, T max_val) {
+        while (true) {
+            try {
+                std::cout << prompt;
+                std::string input;
+                std::getline(std::cin, input);
+                
+                if (input.empty()) {
+                    throw std::invalid_argument("Empty input");
+                }
+                
+                T value;
+                std::istringstream iss(input);
+                if (!(iss >> value) || !iss.eof()) {
+                    throw std::invalid_argument("Invalid number format");
+                }
+                
+                if (value < min_val || value > max_val) {
+                    throw std::out_of_range("Value out of allowed range");
+                }
+                
+                return value;
+            } catch (const std::exception& e) {
+                std::cout << "Error: " << e.what() << ". Please try again.\n";
+            }
+        }
+    }
+
+    // Validate date format
+    bool isValidDate(const std::string& date) {
+        if (date.length() != 10) return false;
+        if (date[4] != '-' || date[7] != '-') return false;
+        
+        try {
+            int year = std::stoi(date.substr(0, 4));
+            int month = std::stoi(date.substr(5, 2));
+            int day = std::stoi(date.substr(8, 2));
+            
+            return (year >= 1900 && year <= 2100) &&
+                   (month >= 1 && month <= 12) &&
+                   (day >= 1 && day <= 31);
+        } catch (...) {
+            return false;
+        }
+    }
+
     // Function to handle yes/no input from the user
     bool yesorno() {
         char choice;
@@ -127,24 +176,36 @@ struct mainmenu {
        Prompts the user for title, date, name, sets, repetitions, and weights. */
        
     void workout() {
-    	
-    	Exercise newWorkout;
-    	
-    /* An if statement that checks if the user has already inputted a workout title and date.
-       This is to prevent the enter workout title and date to keep on getting called if the user chooses the [1] Add Exercises for Workout choice in the main menu */
-       
-    	if (workoutTitle.empty() && workoutDate.empty()) { 
-    		std::cout << "Enter workout title: ";				
-        	std::getline(std::cin, workoutTitle);
-        	std::cout << "Enter workout date (YYYY-MM-DD): ";
-        	std::getline(std::cin, workoutDate);
-        	std::cout << "\n";
-		} else {
-			std::cout << "\nWorkout Name: " << workoutTitle << std::endl;
-        	std::cout << "Workout Date: " << workoutDate << std::endl;
-        	std::cout << "\n";
-		}	
-	}
+        try {
+            if (workoutTitle.empty() && workoutDate.empty()) {
+                do {
+                    std::cout << "Enter workout title: ";
+                    std::getline(std::cin, workoutTitle);
+                    if (workoutTitle.empty()) {
+                        throw std::invalid_argument("\nWorkout title cannot be empty");
+                    }
+                } while (workoutTitle.empty());
+
+                do {
+                    std::cout << "Enter workout date (YYYY-MM-DD): ";
+                    std::getline(std::cin, workoutDate);
+                    if (!isValidDate(workoutDate)) {
+                        std::cout << "\nInvalid date format. Use YYYY-MM-DD\n";
+                        workoutDate.clear();
+                    }
+                    std::cout << "\n";
+                } while (!isValidDate(workoutDate));
+            } else {
+                std::cout << "\nWorkout Name: " << workoutTitle << std::endl;
+                std::cout << "Workout Date: " << workoutDate << std::endl;
+                std::cout << "\n";
+            }
+        } catch (const std::exception& e) {
+            std::cout << "Error in workout setup: " << e.what() << std::endl;
+            workoutTitle.clear();
+            workoutDate.clear();
+        }
+    }
 
     void addExercise() {
     	
