@@ -1,10 +1,12 @@
 #include <iostream> // For the basic input and output functions.
+#include <fstream> // For file handling.
 #include <vector> // For handling dynamic inputs.	
 #include <limits> // Limits library to add min/max value.
 #include <cctype> // Include cctype library for character handling.
 #include <cmath> // For future calculations.
 #include <iomanip> // Include iomanip library for formatting output.
 #include <cstdlib> // For the exit() function.
+#include <algorithm> // For std::replace
 
  /* Struct to represent the main menu and its associated functions. */
 
@@ -56,8 +58,8 @@ struct mainmenu {
                 repUi();
                 break;
             case 5:   
-                std::cout << "save workout \n";
-                repUi();
+                saveWorkoutToFile();
+                std::cout << "\nThank you for using the program!";
                 break;
             case 6: 
                 std::cout << "Thank you for using the workout tracker!";
@@ -333,6 +335,135 @@ struct mainmenu {
         ui(); // Return to main menu
     }
 }
+
+    void saveWorkoutToFile() {
+        try {
+            if (exercises.empty()) {
+                std::cout << "No exercises to save." << std::endl;
+                repUi();
+                return;
+            }
+
+            // Create filename using workout title and date
+            std::string filename = workoutTitle + "_" + workoutDate + ".txt";
+            // Replace spaces with underscores in filename
+            std::replace(filename.begin(), filename.end(), ' ', '_');
+            
+            std::ofstream outFile(filename);
+            if (!outFile) {
+                throw std::runtime_error("Could not create file: " + filename);
+            }
+
+            // Write workout header
+            outFile << "======================================\n";
+            outFile << "Workout Name: " << workoutTitle << "\n";
+            outFile << "Workout Date: " << workoutDate << "\n";
+            outFile << "======================================\n\n";
+
+            // Write exercise table header
+            outFile << std::left << std::setw(25) << "Exercise Name";
+            outFile << std::setw(12) << "Set";
+            outFile << std::setw(14) << "Weight";
+            outFile << std::setw(12) << "Reps\n";
+
+            outFile << "=======================================================\n";
+
+            // Write each exercise and its details
+            for (const auto& exercise : exercises) {
+                for (int i = 0; i < exercise.sets; ++i) {
+                    if (i == 0) {
+                        outFile << std::left << std::setw(25) << exercise.name;
+                    } else {
+                        outFile << std::left << std::setw(25) << " ";
+                    }
+                    outFile << std::setw(12) << (i + 1);
+                    outFile << std::setw(14) << exercise.weights[i];
+                    outFile << std::setw(12) << exercise.reps[i] << "\n";
+                }
+            }
+            outFile << "=======================================================\n";
+            
+            outFile.close();
+            std::cout << "\nWorkout saved successfully to: " << filename << std::endl;
+            
+        } catch (const std::exception& e) {
+            std::cout << "Error saving workout: " << e.what() << std::endl;
+        }
+    }
+
+    void saveWorkoutToPDF() {
+        try {
+            if (exercises.empty()) {
+                std::cout << "No exercises to save." << std::endl;
+                repUi();
+                return;
+            }
+
+            // Create filenames
+            std::string htmlFilename = workoutTitle + "_" + workoutDate + ".html";
+            std::string pdfFilename = workoutTitle + "_" + workoutDate + ".pdf";
+            // Replace spaces with underscores
+            std::replace(htmlFilename.begin(), htmlFilename.end(), ' ', '_');
+            std::replace(pdfFilename.begin(), pdfFilename.end(), ' ', '_');
+
+            // Create and write HTML file
+            std::ofstream outFile(htmlFilename);
+            if (!outFile) {
+                throw std::runtime_error("Could not create file: " + htmlFilename);
+            }
+
+            // Write HTML with styling
+            outFile << "<!DOCTYPE html>\n<html><head>\n"
+                   << "<style>\n"
+                   << "body { font-family: Arial, sans-serif; margin: 40px; }\n"
+                   << "table { border-collapse: collapse; width: 100%; margin-top: 20px; }\n"
+                   << "th, td { border: 1px solid black; padding: 8px; text-align: left; }\n"
+                   << "th { background-color: #f2f2f2; }\n"
+                   << ".header { text-align: center; margin-bottom: 30px; }\n"
+                   << "</style></head><body>\n";
+
+            // Write workout header
+            outFile << "<div class='header'>\n"
+                   << "<h1>Workout Summary</h1>\n"
+                   << "<p><strong>Workout Name:</strong> " << workoutTitle << "</p>\n"
+                   << "<p><strong>Workout Date:</strong> " << workoutDate << "</p>\n"
+                   << "</div>\n";
+
+            // Create table
+            outFile << "<table>\n"
+                   << "<tr><th>Exercise Name</th><th>Set</th><th>Weight (kg)</th><th>Reps</th></tr>\n";
+
+            // Write exercise data
+            for (const auto& exercise : exercises) {
+                for (int i = 0; i < exercise.sets; ++i) {
+                    outFile << "<tr>"
+                           << "<td>" << (i == 0 ? exercise.name : "") << "</td>"
+                           << "<td>" << (i + 1) << "</td>"
+                           << "<td>" << exercise.weights[i] << "</td>"
+                           << "<td>" << exercise.reps[i] << "</td>"
+                           << "</tr>\n";
+                }
+            }
+
+            outFile << "</table></body></html>";
+            outFile.close();
+
+            // Convert HTML to PDF using wkhtmltopdf
+            std::string command = "wkhtmltopdf " + htmlFilename + " " + pdfFilename;
+            int result = system(command.c_str());
+
+            if (result == 0) {
+                // Delete the temporary HTML file
+                remove(htmlFilename.c_str());
+                std::cout << "\nWorkout saved successfully to PDF: " << pdfFilename << std::endl;
+            } else {
+                throw std::runtime_error("Failed to convert to PDF. Please ensure wkhtmltopdf is installed and in your PATH.");
+            }
+
+        } catch (const std::exception& e) {
+            std::cout << "Error saving workout to PDF: " << e.what() << std::endl;
+        }
+    }
 };
 
 int main(){
@@ -343,3 +474,5 @@ int main(){
 
 /* Functions to add: Proceed function in the add exercises for workout function to briefly show the user their current workout list to avoid user redundancy.
    It's okay to do the same exercises repeatedly but this is to prevent the user from forgetting their added exercise(s). */
+
+/* Things to add: Error handling for all functions. Trying to save the file in a pdf format*/
