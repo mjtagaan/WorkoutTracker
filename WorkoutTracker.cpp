@@ -18,59 +18,83 @@ struct mainmenu {
 
     /* Function to serve as the layout/default main menu when the program is launched. */
 
-    void ui() { 
+    void ui() {
+        while (true) {
+            try {
+                int choice;
+                std::cout << "======================================" << "\n";
+                std::cout << "\t" << "WORKOUT TRACKER/LOGGER" << "\n";
+                std::cout << "======================================" << "\n\n";
+                std::cout << "[1] Add Exercises for Workout" << "\n";
+                std::cout << "[2] Edit Workout" << "\n";
+                std::cout << "[3] Delete Exercise" << "\n";
+                std::cout << "[4] Display Current Workout" << "\n";
+                std::cout << "[5] Save Workout" << "\n";
+                std::cout << "[6] Exit Program" << "\n\n";
+                std::cout << "Enter your choice (1-6): ";
 
-        // This function serves as the layout/default main menu when the program is launched.
+                std::string input;
+                std::getline(std::cin, input);
 
-        int choice;
-        
-        std::cout << "======================================" << "\n";
-        std::cout << "\t" << "WORKOUT TRACKER/LOGGER" << "\n";
-        std::cout << "======================================" << "\n\n";
-        std::cout << "[1] Add Exercises for Workout" << "\n";
-        std::cout << "[2] Edit Workout" << "\n";
-        std::cout << "[3] Delete Exercise" << "\n";
-        std::cout << "[4] Display Current Workout" << "\n";
-        std::cout << "[5] Save Workout" << "\n";
-        std::cout << "[6] Exit Program" << "\n\n";
-        std::cout << "Enter your choice (1-6): ";
-        std::cin >> choice;
-        std::cin.clear();
-        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-        system("cls");
-    
-        switch(choice) {
-            case 1:
-            	workout();
-                addExercise();
-                break;
-            case 2:
-                workout();
-                editExercise();
-                repUi();
-                break;
-            case 3:
-                workout();
-                deleteExercise();
-                repUi();
-                break;
-            case 4:
-                displayCurrentWorkout(workoutTitle, workoutDate);
-                repUi();
-                break;
-            case 5:   
-                saveWorkoutToFile();
-                std::cout << "\nThank you for using the program!";
-                break;
-            case 6: 
-                std::cout << "Thank you for using the workout tracker!";
-                exit(0);
-                break;
-            default:   
-                std::cout << "Invalid choice! Please choose between the numbers of [1-6].\n";
-                repUi();
-                break;
-            }   
+                // Check for empty input
+                if (input.empty()) {
+                    throw std::invalid_argument("Empty input. Please enter a number (1-6).");
+                }
+
+                // Try to convert input to integer
+                std::istringstream iss(input);
+                if (!(iss >> choice) || !iss.eof()) {
+                    throw std::invalid_argument("Invalid input. Please enter a number (1-6).");
+                }
+
+                // Check if number is in valid range
+                if (choice < 1 || choice > 6) {
+                    throw std::out_of_range("Invalid choice. Please enter a number between 1 and 6.");
+                }
+
+                system("cls");
+            
+                switch(choice) {
+                    case 1:
+                        workout();
+                        addExercise();
+                        break;
+                    case 2:
+                        workout();
+                        editExercise();
+                        repUi();
+                        break;
+                    case 3:
+                        workout();
+                        deleteExercise();
+                        repUi();
+                        break;
+                    case 4:
+                        displayCurrentWorkout(workoutTitle, workoutDate);
+                        repUi();
+                        break;
+                    case 5:   
+                        saveWorkoutToFile();
+                        std::cout << "\nThank you for using the program!";
+                        exit(0);
+                        break;
+                    case 6: 
+                        system("cls");
+                        std::cout << "=================================================\n";
+                        std::cout << "              WORKOUT TRACKER/LOGGER              \n";
+                        std::cout << "=================================================\n\n";
+                        std::cout << "                Thank you for using               \n";
+                        std::cout << "                the Workout Tracker!               \n\n";
+                        std::cout << "                   See you soon!                  \n";
+                        std::cout << "=================================================\n";
+                        exit(0);
+                        break;
+                }
+            } catch (const std::exception& e) {
+                system("cls");
+                std::cout << "Error: " << e.what() << "\n\n";
+            }
+        }
     };
 
     /* Struct to represent an exercise with its attributes.
@@ -536,12 +560,25 @@ struct mainmenu {
 
             // Create filename using workout title and date
             std::string filename = workoutTitle + "_" + workoutDate + ".txt";
-            // Replace spaces with underscores in filename
-            std::replace(filename.begin(), filename.end(), ' ', '_');
+            // Sanitize filename
+            const std::string invalid_chars = "\\/:*?\"<>|";
+            for (char c : invalid_chars) {
+                std::replace(filename.begin(), filename.end(), c, '_');
+            }
+            
+            // Check if file already exists
+            std::ifstream checkFile(filename);
+            if (checkFile.good()) {
+                std::cout << "File already exists. Overwrite? (y/n): ";
+                if (!yesorno()) {
+                    return;
+                }
+            }
+            checkFile.close();
             
             std::ofstream outFile(filename);
-            if (!outFile) {
-                throw std::runtime_error("Could not create file: " + filename);
+            if (!outFile.is_open()) {
+                throw std::runtime_error("Unable to create file: Permission denied");
             }
 
             // Write workout header
@@ -576,7 +613,7 @@ struct mainmenu {
             std::cout << "\nWorkout saved successfully to: " << filename << std::endl;
             
         } catch (const std::exception& e) {
-            std::cout << "Error saving workout: " << e.what() << std::endl;
+            std::cout << "Error saving workout: " << e.what() << "\n";
         }
     }
 };
@@ -586,8 +623,3 @@ int main(){
     mm1.ui(); // Object accessing the ui.
     return 0;
 }
-
-/* Functions to add: Proceed function in the add exercises for workout function to briefly show the user their current workout list to avoid user redundancy.
-   It's okay to do the same exercises repeatedly but this is to prevent the user from forgetting their added exercise(s). */
-
-/* Things to add: Error handling for all functions. Trying to save the file in a pdf format*/
