@@ -148,17 +148,31 @@ struct mainmenu {
 
     // Validate date format
     bool isValidDate(const std::string& date) {
-        if (date.length() != 10) return false;
-        if (date[4] != '-' || date[7] != '-') return false;
-        
         try {
+            if (date.length() != 10 || date[4] != '-' || date[7] != '-') {
+                return false;
+            }
+            
             int year = std::stoi(date.substr(0, 4));
             int month = std::stoi(date.substr(5, 2));
             int day = std::stoi(date.substr(8, 2));
             
-            return (year >= 1900 && year <= 2100) &&
-                   (month >= 1 && month <= 12) &&
-                   (day >= 1 && day <= 31);
+            // Check year range
+            if (year < 1900 || year > 2100) return false;
+            
+            // Check month
+            if (month < 1 || month > 12) return false;
+            
+            // Check days per month
+            const int daysInMonth[] = {31,28,31,30,31,30,31,31,30,31,30,31};
+            int maxDays = daysInMonth[month-1];
+            
+            // Handle leap years
+            if (month == 2 && ((year % 4 == 0 && year % 100 != 0) || year % 400 == 0)) {
+                maxDays = 29;
+            }
+            
+            return day >= 1 && day <= maxDays;
         } catch (...) {
             return false;
         }
@@ -244,6 +258,10 @@ struct mainmenu {
 
     void addExercise() {
         try {
+            if (exercises.size() >= SIZE_MAX) {
+                throw std::runtime_error("Maximum number of exercises reached");
+            }
+            
             Exercise newExercise;
                 
             // Get exercise name with validation
@@ -292,8 +310,13 @@ struct mainmenu {
                 }
             }
 
-            newExercise.reps.resize(newExercise.sets);
-            newExercise.weights.resize(newExercise.sets);
+            // Validate vector resizing
+            try {
+                newExercise.reps.resize(newExercise.sets);
+                newExercise.weights.resize(newExercise.sets);
+            } catch (const std::bad_alloc& e) {
+                throw std::runtime_error("Not enough memory to add exercise");
+            }
 
             // Get reps and weights for each set
             for (int i = 0; i < newExercise.sets; ++i) {
@@ -617,6 +640,30 @@ struct mainmenu {
         }
     }
 };
+
+std::string getValidInput(const std::string& prompt, size_t maxLength = 100) {
+    while (true) {
+        std::string input;
+        std::cout << prompt;
+        std::getline(std::cin, input);
+        
+        if (input.empty()) {
+            std::cout << "Input cannot be empty\n";
+            continue;
+        }
+        
+        if (input.length() > maxLength) {
+            std::cout << "Input too long (max " << maxLength << " characters)\n";
+            continue;
+        }
+        
+        // Remove leading/trailing whitespace
+        input.erase(0, input.find_first_not_of(" \t\n\r"));
+        input.erase(input.find_last_not_of(" \t\n\r") + 1);
+        
+        return input;
+    }
+}
 
 int main(){
     mainmenu mm1;  // This is the main menu struct object.
