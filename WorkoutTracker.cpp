@@ -189,82 +189,135 @@ struct mainmenu {
     }
 
     // This function serves as the back door to get back to the main menu.
-    void repUi () { 
+    void repUi() {
+        while (true) {
+            std::cout << "\nEnter [1] to return to the main menu. \n";
+            std::cout << "Enter [2] to exit. \n\n";
+                
+            std::string input;
+            std::cout << "Enter your choice: ";
+            std::getline(std::cin, input);
 
-        std::cout << "\nEnter [1] to return to the main menu. \n";
-        std::cout << "Enter [2] to exit. \n\n";
-            
-        int mmex;
-        std::cout << "Enter your choice: ";
-        std::cin >> mmex;
+            try {
+                if (input.empty()) {
+                    throw std::invalid_argument("Empty input");
+                }
 
-        if (mmex == 1) {
-            system("cls");
-            ui();
-        } else if (mmex == 2) {
-            std::cout << "\nThank you for using the program!";
-            exit(0);
-        } else if (mmex != 1 && mmex != 2) {
-            std::cout << "\nInvalid Input!";
-            repUi(); // Call the function again to get a valid input
-        }   
-    };
+                int mmex;
+                std::istringstream iss(input);
+                if (!(iss >> mmex) || !iss.eof()) {
+                    throw std::invalid_argument("Invalid input");
+                }
+
+                if (mmex == 1) {
+                    system("cls");
+                    ui();
+                    break;
+                } else if (mmex == 2) {
+                    std::cout << "\nThank you for using the program!";
+                    exit(0);
+                } else {
+                    throw std::out_of_range("Invalid choice");
+                }
+            } catch (const std::exception& e) {
+                system("cls");
+                std::cout << "Error: " << e.what() << ". Please enter 1 or 2.\n";
+            }
+        }
+    }
 
     /* Function to add a new exercise to the exercises vector.
        Prompts the user for title, date, name, sets, repetitions, and weights. */
        
-    void workout() {
-        try {
-            if (workoutTitle.empty() && workoutDate.empty()) {
-                // Get workout title with validation
-                while (true) {
-                    std::cout << "Enter workout title: ";
-                    std::getline(std::cin, workoutTitle);
-                    
-                    if (workoutTitle.empty()) {
-                        system("cls");
-                        std::cout << "Error: Workout title cannot be empty.\n\n";
-                        continue;
-                    }
-                    break;
-                }
+    /* Workout Function Documentation
+       Purpose: Manages the workout title and date input/display functionality
+       - Handles initial workout setup
+       - Validates and stores workout information
+       - Prevents empty or whitespace-only titles
+       - Ensures proper date format
+       - Provides error recovery */
 
-                // Get workout date with validation
-                while (true) {
-                    std::cout << "Enter workout date (YYYY-MM-DD): ";
-                    std::getline(std::cin, workoutDate);
-                    if (!isValidDate(workoutDate)) {
-                        system("cls");
-                        std::cout << "Invalid date format. Use YYYY-MM-DD\n\n";
-                        workoutDate.clear();
-                        continue;
+    void workout() {
+        while (true) {  // Main loop for error recovery and input validation
+            try {
+                // Check if workout information already exists
+                if (workoutTitle.empty() && workoutDate.empty()) {
+                    
+                    // Title Input Loop
+                    while (true) {
+                        std::cout << "Enter workout title: ";
+                        std::getline(std::cin, workoutTitle);
+                        
+                        // Remove leading/trailing whitespace from title
+                        workoutTitle.erase(0, workoutTitle.find_first_not_of(" \t\n\r"));
+                        workoutTitle.erase(workoutTitle.find_last_not_of(" \t\n\r") + 1);
+                        
+                        // Validate title is not empty after trimming
+                        if (workoutTitle.empty()) {
+                            system("cls");  // Clear screen for better user experience
+                            std::cout << "Error: Workout title cannot be empty or contain only whitespace.\n\n";
+                            continue;  // Restart title input loop
+                        }
+                        break;  // Valid title obtained
                     }
+
+                    // Date Input Loop
+                    while (true) {
+                        std::cout << "Enter workout date (YYYY-MM-DD): ";
+                        std::getline(std::cin, workoutDate);
+                        
+                        // Validate date format using isValidDate helper function
+                        if (!isValidDate(workoutDate)) {
+                            system("cls");
+                            std::cout << "Invalid date format. Use YYYY-MM-DD\n\n";
+                            workoutDate.clear();  // Reset invalid date
+                            continue;  // Restart date input loop
+                        }
+                        std::cout << "\n";
+                        break;  // Valid date obtained
+                    }
+                    break;  // Exit main loop after successful input
+                    
+                } else {
+                    // Display existing workout information
+                    std::cout << "\nWorkout Name: " << workoutTitle << std::endl;
+                    std::cout << "Workout Date: " << workoutDate << std::endl;
                     std::cout << "\n";
-                    break;
+                    break;  // Exit main loop
                 }
-            } else {
-                std::cout << "\nWorkout Name: " << workoutTitle << std::endl;
-                std::cout << "Workout Date: " << workoutDate << std::endl;
-                std::cout << "\n";
+                
+            } catch (const std::exception& e) {
+                // Handle any unexpected errors
+                system("cls");
+                std::cout << "Error in workout setup: " << e.what() << std::endl << std::endl;
+                
+                // Reset workout information
+                workoutTitle.clear();
+                workoutDate.clear();
+                
+                continue;  // Restart main loop for error recovery
             }
-        } catch (const std::exception& e) {
-            system("cls");
-            std::cout << "Error in workout setup: " << e.what() << std::endl << std::endl;
-            workoutTitle.clear();
-            workoutDate.clear();
-            workout(); // Retry on error
         }
     }
 
+    /* Function: addExercise()
+       Purpose: Adds a new exercise to the workout with full validation and error handling
+       - Manages exercise creation and data input
+       - Validates all numeric inputs
+       - Provides memory safety checks
+       - Shows exercise summary after addition
+       - Allows multiple exercise additions */
+
     void addExercise() {
         try {
+            // Check if maximum exercise limit reached
             if (exercises.size() >= SIZE_MAX) {
                 throw std::runtime_error("Maximum number of exercises reached");
             }
             
-            Exercise newExercise;
+            Exercise newExercise;  // Create new exercise object
                 
-            // Get exercise name with validation
+            // Exercise name input with empty check
             do {
                 std::cout << "Enter exercise name: ";
                 std::getline(std::cin, newExercise.name);
@@ -273,7 +326,7 @@ struct mainmenu {
                 }
             } while (newExercise.name.empty());
 
-            // Show current exercises if any exist
+            // Display existing exercises for reference
             if (!exercises.empty()) {
                 std::cout << "\nCurrent exercises in your workout:\n";
                 for (size_t i = 0; i < exercises.size(); ++i) {
@@ -282,7 +335,7 @@ struct mainmenu {
                 std::cout << "\n";
             }
 
-            // Get number of sets with validation for positive integers
+            // Get number of sets with validation
             while (true) {
                 try {
                     std::cout << "Enter number of sets: ";
@@ -310,7 +363,7 @@ struct mainmenu {
                 }
             }
 
-            // Validate vector resizing
+            // Allocate memory for reps and weights vectors
             try {
                 newExercise.reps.resize(newExercise.sets);
                 newExercise.weights.resize(newExercise.sets);
@@ -318,11 +371,11 @@ struct mainmenu {
                 throw std::runtime_error("Not enough memory to add exercise");
             }
 
-            // Get reps and weights for each set
+            // Input loop for each set's data
             for (int i = 0; i < newExercise.sets; ++i) {
                 std::cout << "\nSet " << (i + 1) << ":\n";
                 
-                // Get reps with validation for positive integers
+                // Get reps with validation
                 while (true) {
                     try {
                         std::cout << "Enter reps: ";
@@ -350,7 +403,7 @@ struct mainmenu {
                     }
                 }
                 
-                // Get weights with validation for non-negative numbers
+                // Get weights with validation
                 while (true) {
                     try {
                         std::cout << "Enter weight (in kg): ";
@@ -379,10 +432,11 @@ struct mainmenu {
                 }
             }
 
+            // Add exercise to vector
             exercises.push_back(newExercise);
             std::cout << "\nExercise added successfully!\n";
 
-            // Show exercise summary
+            // Display exercise summary
             std::cout << "\nExercise Summary:\n\n";
             std::cout << "Name: " << newExercise.name << "\n";
             for (int i = 0; i < newExercise.sets; ++i) {
@@ -391,21 +445,23 @@ struct mainmenu {
                          << newExercise.weights[i] << " kg\n";
             }
 
+            // Ask to add another exercise
             if (yesorno()) {
                 system("cls");
-                // Display workout info again after clearing screen
+                // Redisplay workout info
                 std::cout << "Workout Name: " << workoutTitle << "\n";
                 std::cout << "Workout Date: " << workoutDate << "\n\n";
-                addExercise();
+                addExercise();  // Recursive call for another exercise
             } else {
                 system("cls");
-                ui();
+                ui();  // Return to main menu
             }
         } catch (const std::exception& e) {
+            // Error handling for the entire function
             std::cout << "Error adding exercise: " << e.what() << "\n";
             if (yesorno()) {
                 system("cls");
-                // Display workout info again after error
+                // Redisplay workout info after error
                 std::cout << "Workout Name: " << workoutTitle << "\n";
                 std::cout << "Workout Date: " << workoutDate << "\n\n";
                 addExercise();
@@ -446,196 +502,329 @@ struct mainmenu {
         std::cout << "=======================================================\n";
     }
 
-    // Function to delete an exercise from the exercises vector.
-    
+    /* Function: deleteExercise()
+       Purpose: Removes exercises from the workout with confirmation
+       Features:
+       - Lists all current exercises
+       - Validates exercise selection
+       - Confirms deletion
+       - Handles empty exercise list
+       - Provides cancellation option
+       - Allows multiple deletions */
+
     void deleteExercise() {
+        try {
+            // Check if there are exercises to delete
+            if (exercises.empty()) {
+                std::cout << "No exercises to delete." << std::endl;
+                repUi();
+                return;
+            }
 
-        if (exercises.empty()) {
-            std::cout << "No exercises to delete." << std::endl;
-            return;
+            while (true) {  // Main deletion loop
+                // Display current exercises with numbers
+                std::cout << "Current Exercises:\n\n";
+                for (size_t i = 0; i < exercises.size(); ++i) {
+                    std::cout << i + 1 << ". " << exercises[i].name << std::endl;
+                }
+
+                // Get exercise number with cancel option
+                std::string input;
+                std::cout << "\nEnter the number of the exercise to delete (or press Enter to cancel): ";
+                std::getline(std::cin, input);
+
+                // Handle cancellation via Enter key
+                if (input.empty()) {
+                    std::cout << "\nDeletion cancelled.\n";
+                    repUi();
+                    return;
+                }
+
+                try {
+                    // Validate input number
+                    int index;
+                    std::istringstream iss(input);
+                    if (!(iss >> index) || !iss.eof()) {
+                        throw std::invalid_argument("Invalid input. Please enter a number.");
+                    }
+
+                    // Check if number is in valid range
+                    if (index < 1 || index > exercises.size()) {
+                        throw std::out_of_range("Invalid exercise number.");
+                    }
+
+                    // Confirm deletion
+                    std::cout << "\nAre you sure you want to delete '" << exercises[index-1].name << "'? (y/n): ";
+                    char choice;
+                    std::cin >> choice;
+                    std::cin.ignore();
+
+                    if (tolower(choice) == 'y') {
+                        // Perform deletion
+                        exercises.erase(exercises.begin() + (index - 1));
+                        std::cout << "\nExercise deleted successfully!\n";
+                        
+                        // Option to delete another if exercises remain
+                        if (!exercises.empty()) {
+                            if (yesorno()) {  // Using global yes/no function
+                                system("cls");
+                                workout();
+                                continue;  // Continue deletion loop
+                            }
+                        }
+                    } else {
+                        std::cout << "\nDeletion cancelled.\n";
+                    }
+                    repUi();
+                    return;
+
+                } catch (const std::exception& e) {
+                    // Handle invalid input errors
+                    std::cout << "Error: " << e.what() << "\nPlease try again.\n\n";
+                    continue;
+                }
+            }
+        } catch (const std::exception& e) {
+            // Handle unexpected errors
+            std::cout << "Error in delete operation: " << e.what() << std::endl;
+            repUi();
         }
-
-        std::cout << "Current Exercises:\n\n";
-        for (size_t i = 0; i < exercises.size(); ++i) {
-            std::cout << i + 1 << ". " << exercises[i].name << std::endl;
-        }
-
-        int index;
-        std::cout << "\nEnter the number of the exercise you want to delete: ";
-        std::cin >> index;
-        std::cin.ignore(); 
-
-        if (index < 1 || index > exercises.size()) {
-            std::cout << "Invalid choice. Please try again." << std::endl;
-            return;
-        }
-
-        // Remove the selected exercise
-        exercises.erase(exercises.begin() + (index - 1));
-        std::cout << "\nExercise deleted successfully!" << std::endl;
-
-        // Use the yes or no function to ask if the user wants to delete another exercise
-        if (yesorno()) {
-            deleteExercise();
-        } else {
-            system("cls");
-            ui(); // Return to main menu
-        }
-
-         /* Things to add:
-		   show the lists of exercises briefly 
-           also remove the set of the specific exercise */
     }
     
+    /* Function: editExercise()
+       Purpose: Allows modification of existing exercises in the workout
+       Features:
+       - Displays list of current exercises
+       - Allows editing of exercise name, sets, reps, and weights
+       - Provides cancellation option
+       - Input validation for all numeric values
+       - Memory safety for vector resizing
+       - Maintains data integrity during edits */
+
     void editExercise() {
-    // Check if there are any exercises to edit
-    if (exercises.empty()) {
-        std::cout << "No exercises to edit." << std::endl;
-        return;
-    }
+        while (true) {  // Main edit loop for error recovery
+            // Check for exercises to edit
+            if (exercises.empty()) {
+                std::cout << "No exercises to edit." << std::endl;
+                repUi();
+                return;
+            }
 
-    // Display list of all current exercises with their index numbers
-    std::cout << "Current Exercises:\n\n";
-    for (size_t i = 0; i < exercises.size(); ++i) {
-        std::cout << i + 1 << ". " << exercises[i].name << std::endl;
-    }
+            // Display exercise list
+            std::cout << "Current Exercises:\n\n";
+            for (size_t i = 0; i < exercises.size(); ++i) {
+                std::cout << i + 1 << ". " << exercises[i].name << std::endl;
+            }
+            
+            // Get exercise selection with cancel option
+            std::string input;
+            std::cout << "\nEnter the number of the exercise to edit (or press Enter to cancel): ";
+            std::getline(std::cin, input);
 
-    // Variable to store the user's choice of exercise to edit
-    int index;
-    // Prompt user to select an exercise by number
-    std::cout << "\nEnter the number of the exercise you want to edit: ";
-    std::cin >> index;
-    std::cin.ignore(); // Clear the input buffer after reading the number
+            // Handle cancellation
+            if (input.empty()) {
+                std::cout << "\nEdit cancelled.\n";
+                repUi();
+                return;
+            }
 
-    // Validate the user's input
-    if (index < 1 || index > exercises.size()) {
-        std::cout << "Invalid choice. Please try again." << std::endl;
-        return;
-    }
+            try {
+                // Validate exercise number input
+                int index;
+                std::istringstream iss(input);
+                if (!(iss >> index) || !iss.eof()) {
+                    throw std::invalid_argument("Invalid input. Please enter a number.");
+                }
 
-    // Get a reference to the exercise that will be edited (index-1 because array is 0-based)
-    Exercise& exerciseToEdit = exercises[index - 1];
+                if (index < 1 || index > exercises.size()) {
+                    throw std::out_of_range("Invalid exercise number.");
+                }
 
-    // Show which exercise is being edited
-    std::cout << "\nEditing exercise: " << exerciseToEdit.name << "\n";
+                // Get reference to selected exercise
+                Exercise& exerciseToEdit = exercises[index - 1];
 
-    // Prompt for new exercise name, showing current name. Enter to keep current name
-    std::cout << "\nEnter new exercise name (or press Enter to keep current: " << exerciseToEdit.name << "): ";
-    std::string newName;
-    std::getline(std::cin, newName);
-    // Update name only if user entered something
-    if (!newName.empty()) {
-        exerciseToEdit.name = newName;
-    }
+                // Edit exercise name with empty input check
+                std::cout << "\nCurrent name: " << exerciseToEdit.name;
+                std::cout << "\nEnter new name (or press Enter to keep current): ";
+                std::string newName;
+                std::getline(std::cin, newName);
+                if (!newName.empty()) {
+                    exerciseToEdit.name = newName;
+                }
 
-    // Prompt for new number of sets, showing current number. Enter to keep current number
-    std::cout << "Enter new number of sets (or press Enter to keep current: " << exerciseToEdit.sets << "): ";
-    std::string newSetStr;
-    std::getline(std::cin, newSetStr);
-    // Update sets only if user entered something
-    if (!newSetStr.empty()) {
-        int newSets = std::stoi(newSetStr); // Convert string to integer
-        exerciseToEdit.sets = newSets;
-        exerciseToEdit.reps.resize(newSets); // Resize reps vector to match new number of sets
-        exerciseToEdit.weights.resize(newSets); // Resize weights vector to match new number of sets
-    }
+                // Edit number of sets with validation
+                std::cout << "\nCurrent number of sets: " << exerciseToEdit.sets;
+                std::cout << "\nEnter new number of sets (or press Enter to keep current): ";
+                std::string newSetStr;
+                std::getline(std::cin, newSetStr);
 
-    // Loop through each set to edit reps and weights
-    for (int i = 0; i < exerciseToEdit.sets; ++i) {
-        // Prompt for new reps for current set, showing current reps. Enter to keep current reps
-        std::cout << "Enter new reps for set " << (i + 1) << " (or press Enter to keep current: " << exerciseToEdit.reps[i] << "): ";
-        std::string newRepStr;
-        std::getline(std::cin, newRepStr);
-        // Update reps only if user entered something
-        if (!newRepStr.empty()) {
-            exerciseToEdit.reps[i] = std::stoi(newRepStr); // Convert string to integer
+                // Process new sets if provided
+                if (!newSetStr.empty()) {
+                    try {
+                        std::istringstream iss(newSetStr);
+                        int newSets;
+                        if (!(iss >> newSets) || !iss.eof()) {
+                            throw std::invalid_argument("Invalid number format");
+                        }
+                        if (newSets <= 0) {
+                            throw std::out_of_range("Sets must be greater than 0");
+                        }
+                        exerciseToEdit.sets = newSets;
+                        exerciseToEdit.reps.resize(newSets);
+                        exerciseToEdit.weights.resize(newSets);
+                    } catch (const std::exception& e) {
+                        std::cout << "Error: " << e.what() << ". Keeping current sets.\n";
+                    }
+                }
+
+                // Edit reps and weights for each set
+                for (int i = 0; i < exerciseToEdit.sets; ++i) {
+                    std::cout << "\nSet " << (i + 1) << ":\n";
+                    
+                    // Edit reps with validation
+                    std::cout << "Current reps: " << exerciseToEdit.reps[i];
+                    std::cout << "\nEnter new reps (or press Enter to keep current): ";
+                    std::string newRepStr;
+                    std::getline(std::cin, newRepStr);
+
+                    if (!newRepStr.empty()) {
+                        try {
+                            std::istringstream iss(newRepStr);
+                            int newReps;
+                            if (!(iss >> newReps) || !iss.eof()) {
+                                throw std::invalid_argument("Invalid number format");
+                            }
+                            if (newReps <= 0) {
+                                throw std::out_of_range("Reps must be greater than 0");
+                            }
+                            exerciseToEdit.reps[i] = newReps;
+                        } catch (const std::exception& e) {
+                            std::cout << "Error: " << e.what() << ". Keeping current reps.\n";
+                        }
+                    }
+
+                    // Edit weights with validation
+                    std::cout << "Current weight: " << exerciseToEdit.weights[i];
+                    std::cout << "\nEnter new weight (or press Enter to keep current): ";
+                    std::string newWeightStr;
+                    std::getline(std::cin, newWeightStr);
+
+                    if (!newWeightStr.empty()) {
+                        try {
+                            std::istringstream iss(newWeightStr);
+                            float newWeight;
+                            if (!(iss >> newWeight) || !iss.eof()) {
+                                throw std::invalid_argument("Invalid number format");
+                            }
+                            if (newWeight < 0) {
+                                throw std::out_of_range("Weight cannot be negative");
+                            }
+                            exerciseToEdit.weights[i] = newWeight;
+                        } catch (const std::exception& e) {
+                            std::cout << "Error: " << e.what() << ". Keeping current weight.\n";
+                        }
+                    }
+                }
+
+                // Confirm successful edit
+                std::cout << "\nExercise edited successfully!\n";
+
+                // Option to edit another exercise
+                if (yesorno()) {
+                    system("cls");
+                    workout();
+                    continue;  // Continue loop for another edit
+                } else {
+                    system("cls");
+                    ui();
+                    return;
+                }
+            } catch (const std::exception& e) {
+                std::cout << "Error: " << e.what() << "\nPlease try again.\n\n";
+                continue;  // Continue loop on error
+            }
         }
-
-        // Prompt for new weight for current set, showing current weight. Enter to keep current weight
-        std::cout << "Enter new weight for set " << (i + 1) << " (or press Enter to keep current: " << exerciseToEdit.weights[i] << "): ";
-        std::string newWeightStr;
-        std::getline(std::cin, newWeightStr);
-        // Update weight only if user entered something
-        if (!newWeightStr.empty()) {
-            exerciseToEdit.weights[i] = std::stof(newWeightStr); // Convert string to float
-        }
     }
 
-    // Confirm successful edit to user
-    std::cout << "\nExercise edited successfully!\n";
-
-    // Ask if user wants to edit another exercise
-    if (yesorno()) {
-        editExercise(); // Recursively call editExercise if user wants to edit another
-    } else {
-        system("cls"); // Clear the screen
-        ui(); // Return to main menu
-    }
-}
+    /* Function: saveWorkoutToFile()
+       Purpose: Saves the current workout session to a text file
+       Features:
+       - Creates a formatted text file with workout details
+       - Sanitizes filename for system compatibility
+       - Handles file overwrite protection
+       - Provides proper error handling
+       - Formats output for readability
+       - Validates file operations */
 
     void saveWorkoutToFile() {
         try {
+            // Check if there are exercises to save
             if (exercises.empty()) {
                 std::cout << "No exercises to save." << std::endl;
                 repUi();
                 return;
             }
 
-            // Create filename using workout title and date
+            // Create filename from workout details and sanitize it
             std::string filename = workoutTitle + "_" + workoutDate + ".txt";
-            // Sanitize filename
-            const std::string invalid_chars = "\\/:*?\"<>|";
+            const std::string invalid_chars = "\\/:*?\"<>|";  // Windows invalid filename chars
             for (char c : invalid_chars) {
                 std::replace(filename.begin(), filename.end(), c, '_');
             }
             
-            // Check if file already exists
+            // File overwrite protection
             std::ifstream checkFile(filename);
             if (checkFile.good()) {
                 std::cout << "File already exists. Overwrite? (y/n): ";
                 if (!yesorno()) {
-                    return;
+                    return;  // User chose not to overwrite
                 }
             }
             checkFile.close();
             
+            // Create and open output file
             std::ofstream outFile(filename);
             if (!outFile.is_open()) {
                 throw std::runtime_error("Unable to create file: Permission denied");
             }
 
-            // Write workout header
+            // Write formatted workout header
             outFile << "======================================\n";
             outFile << "Workout Name: " << workoutTitle << "\n";
             outFile << "Workout Date: " << workoutDate << "\n";
             outFile << "======================================\n\n";
 
-            // Write exercise table header
-            outFile << std::left << std::setw(25) << "Exercise Name";
-            outFile << std::setw(12) << "Set";
-            outFile << std::setw(14) << "Weight";
-            outFile << std::setw(12) << "Reps";
-            outFile << "\n=======================================================\n";
+            // Write table header with column alignment
+            outFile << std::left 
+                    << std::setw(25) << "Exercise Name"
+                    << std::setw(12) << "Set"
+                    << std::setw(14) << "Weight"
+                    << std::setw(12) << "Reps"
+                    << "\n=======================================================\n";
 
-            // Write each exercise and its details
+            // Write exercise data in tabular format
             for (const auto& exercise : exercises) {
                 for (int i = 0; i < exercise.sets; ++i) {
+                    // Print exercise name only for first set
                     if (i == 0) {
                         outFile << std::left << std::setw(25) << exercise.name;
                     } else {
-                        outFile << std::left << std::setw(25) << " ";
+                        outFile << std::left << std::setw(25) << " ";  // Alignment spacing
                     }
-                    outFile << std::setw(12) << (i + 1);
-                    outFile << std::setw(14) << exercise.weights[i];
-                    outFile << std::setw(12) << exercise.reps[i] << "\n";
+                    outFile << std::setw(12) << (i + 1)  // Set number
+                           << std::setw(14) << exercise.weights[i]  // Weight
+                           << std::setw(12) << exercise.reps[i]     // Reps
+                           << "\n";
                 }
             }
             outFile << "=======================================================\n";
             
+            // Close file and confirm save
             outFile.close();
             std::cout << "\nWorkout saved successfully to: " << filename << std::endl;
             
         } catch (const std::exception& e) {
+            // Handle any file operation errors
             std::cout << "Error saving workout: " << e.what() << "\n";
         }
     }
