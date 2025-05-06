@@ -183,7 +183,6 @@ struct mainmenu {
         char choice;
         std::cout << "\nDo you want to continue? (y/n): ";
         std::cin >> choice;
-        std::cout << "\n";
         std::cin.ignore(); // Clear newline character from input buffer
         return (tolower(choice) == 'y'); // Return true if 'y' or 'Y', false otherwise
     }
