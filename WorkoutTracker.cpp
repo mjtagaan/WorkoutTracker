@@ -71,7 +71,7 @@ struct mainmenu {
                         break;
                     case 4:
                         displayCurrentWorkout(workoutTitle, workoutDate);
-                        repUi();
+                        saveWorkoutandExit();
                         break;
                     case 5:   
                         saveWorkoutToFile();
@@ -213,6 +213,45 @@ struct mainmenu {
                     ui();
                     break;
                 } else if (mmex == 2) {
+                    std::cout << "\nThank you for using the program!";
+                    exit(0);
+                } else {
+                    throw std::out_of_range("Invalid choice");
+                }
+            } catch (const std::exception& e) {
+                system("cls");
+                std::cout << "Error: " << e.what() << ". Please enter 1 or 2.\n";
+            }
+        }
+    }
+
+    void saveWorkoutandExit() {
+        while (true) {
+            std::cout << "\nSave this workout?\n";
+            std::cout << "\nEnter [1] to return to the main menu. \n";
+            std::cout << "Enter [2] to save workout. \n\n";
+                
+            std::string input;
+            std::cout << "Enter your choice: ";
+            std::getline(std::cin, input);
+
+            try {
+                if (input.empty()) {
+                    throw std::invalid_argument("Empty input");
+                }
+
+                int mmex;
+                std::istringstream iss(input);
+                if (!(iss >> mmex) || !iss.eof()) {
+                    throw std::invalid_argument("Invalid input");
+                }
+
+                if (mmex == 1) {
+                    system("cls");
+                    ui();
+                    break;
+                } else if (mmex == 2) {
+                    saveWorkoutToFile();
                     std::cout << "\nThank you for using the program!";
                     exit(0);
                 } else {
@@ -472,7 +511,11 @@ struct mainmenu {
     }
 
     void displayCurrentWorkout(const std::string& workoutTitle, const std::string& workoutDate) {
-    	
+        if(exercises.empty()) {
+                std::cout << "No exercise(s) to display." << std::endl;
+                repUi();
+                return;
+            }
         std::cout << "\nWorkout Name: " << workoutTitle << std::endl;
         std::cout << "Workout Date: " << workoutDate << std::endl;
         std::cout << "\n";
