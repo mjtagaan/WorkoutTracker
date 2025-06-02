@@ -18,7 +18,6 @@ Workout Buddy comes packed with essential functionalities to streamline your wor
 * **Robust Input Validation**: The program includes extensive validation for all user inputs, ensuring data integrity. It handles:
     * Empty inputs
     * Invalid numeric formats
-    * Out-of-range values for sets, reps, and weights
     * Correct date format (YYYY-MM-DD)
     * Prevention of empty workout titles
 * **Error Handling**: Gracefully manages various errors, providing informative messages to the user.
